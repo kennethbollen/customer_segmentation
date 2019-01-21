@@ -102,3 +102,58 @@ data_normalized = pd.DataFrame(data_normalized, index=data.index, columns=data.c
 
 # Print summary statistics
 print(data_normalized.describe().round(2))
+
+# Plot recency distribution
+plt.subplot(3, 1, 1); sns.distplot(datamart_normalized['Recency'])
+
+# Plot frequency distribution
+plt.subplot(3, 1, 2); sns.distplot(datamart_normalized['Frequency'])
+
+# Plot monetary value distribution
+plt.subplot(3, 1, 3); sns.distplot(datamart_normalized['MonetaryValue'])
+
+# Show the plot
+plt.show()
+
+                                                """STEP 5: KMeans Modelling"""
+    
+# Import KMeans 
+from sklearn.cluster import KMeans
+
+# Initialize KMeans
+kmeans = KMeans(n_clusters=3, random_state=1) 
+
+# Fit k-means clustering on the normalized data set
+kmeans.fit(datamart_normalized)
+
+# Extract cluster labels
+cluster_labels = kmeans.labels_
+
+# Create a DataFrame by adding a new cluster label column
+datamart_rfm_k3 = datamart_rfm.assign(Cluster=cluster_labels)
+
+# Group the data by cluster
+grouped = datamart_rfm_k3.groupby(['Cluster'])
+
+# Calculate average RFM values and segment sizes per cluster value
+grouped.agg({
+    'Recency': 'mean',
+    'Frequency': 'mean',
+    'MonetaryValue': ['mean', 'count']
+  }).round(1)
+
+    """STEP 6: Identify the elbow criterion by calculating the SSE for different number of cluster to find the optimal number"""
+#initialize an empty library
+sse = {}
+
+# Fit KMeans and calculate SSE for each k
+for k in range(1, 21):
+  
+    # Initialize KMeans with k clusters
+    kmeans = KMeans(n_clusters=k, random_state=1)
+    
+    # Fit KMeans on the normalized dataset
+    kmeans.fit(data_normalized)
+    
+    # Assign sum of squared distances to k element of dictionary
+    sse[k] = kmeans.inertia_
